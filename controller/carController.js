@@ -1,6 +1,7 @@
 const { Car } = require("../models");
 const imagekit = require("../lib/imagekit");
 
+// Mendapatkan semua data mobil
 async function getAllCars(req, res) {
   try {
     /* console.log("proses saat ada yang request");
@@ -10,8 +11,10 @@ async function getAllCars(req, res) {
     console.log("proses yang apa diminta");
     console.log(req.originalURL); */
 
+    // Semua data mobil dari database
     const cars = await Car.findAll();
 
+    // Respon sukses dengan data mobil
     res.status(200).json({
       status: "200",
       message: "Success get cars data",
@@ -19,6 +22,7 @@ async function getAllCars(req, res) {
       data: { cars },
     });
   } catch (error) {
+    // Respon gagal jika terjadi kesalahan
     res.status(500).json({
       status: "500",
       message: "Failed to get cars data",
@@ -28,9 +32,11 @@ async function getAllCars(req, res) {
   }
 }
 
+// Mendapatkan data mobil berdasarkan ID
 async function getCarById(req, res) {
   const id = req.params.id;
   try {
+    // Mencari mobil berdasarkan ID
     const car = await Car.findByPk(id);
 
     if (!car) {
@@ -39,7 +45,6 @@ async function getCarById(req, res) {
         message: "Car Not Found!",
       });
     }
-
     res.status(200).json({
       status: "200",
       message: "Success get cars data",
@@ -56,14 +61,16 @@ async function getCarById(req, res) {
   }
 }
 
+// Mnghapus data mobil berdasarkan ID
 async function deleteCarById(req, res) {
   const id = req.params.id;
   try {
+    // Mencari mobil berdasarkan ID
     const car = await Car.findByPk(id);
 
     if (car) {
+      // Menghapus data mobil jika ditemukan
       await car.destroy();
-
       res.status(200).json({
         status: "200",
         message: "Success get cars data",
@@ -86,21 +93,24 @@ async function deleteCarById(req, res) {
   }
 }
 
+// Memperbarui data mobil
 async function updateCar(req, res) {
   const id = req.params.id;
   const { plate, model, type, year } = req.body;
 
   try {
+    // Mencari mobil berdasarkan ID
     const car = await Car.findByPk(id);
 
     if (car) {
+      // Memperbarui data mobil
       car.plate = plate;
       car.model = model;
       car.type = type;
       car.year = year;
 
+      // Menyimpan perubahan data mobil
       await car.save();
-
       res.status(200).json({
         status: "200",
         message: "Success get cars data",
@@ -123,17 +133,17 @@ async function updateCar(req, res) {
   }
 }
 
+// Membuat data mobil baru
 async function createCar(req, res) {
   const files = req.files;
   const uploadedImages = [];
 
+  // Mengupload setiap file gambar menggunakan ImageKit
   for (i = 0; i < files.length; i++) {
-    // 1. processing file nya
     let split = files[i].originalname.split(".");
     let ext = split[split.length - 1];
     let filename = split[0];
 
-    //2. upload images ke server
     const uploadedImage = await imagekit.upload({
       file: files[i].buffer,
       fileName: `Car image-${filename}-${Date.now()}.${ext}`,
@@ -145,6 +155,7 @@ async function createCar(req, res) {
   const newCar = req.body;
 
   try {
+    // Data mobil baru dengan gambar yang telah diupload
     await Car.create({ ...newCar, images: uploadedImages });
     res.status(200).json({
       status: "Success",
@@ -161,7 +172,6 @@ async function createCar(req, res) {
     });
   }
 }
-
 module.exports = {
   createCar,
   getAllCars,
