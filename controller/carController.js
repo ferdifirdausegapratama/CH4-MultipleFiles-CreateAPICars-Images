@@ -138,40 +138,63 @@ async function createCar(req, res) {
   const files = req.files;
   const uploadedImages = [];
 
+  if (!files || files.length === 0) {
+    return res.status(400).json({
+      status: "400",
+      message: "No files were uploaded.",
+      isSuccess: false,
+    });
+  }
+
   // Mengupload setiap file gambar menggunakan ImageKit
-  for (i = 0; i < files.length; i++) {
+  for (let i = 0; i < files.length; i++) {
     let split = files[i].originalname.split(".");
     let ext = split[split.length - 1];
     let filename = split[0];
 
-    const uploadedImage = await imagekit.upload({
-      file: files[i].buffer,
-      fileName: `Car image-${filename}-${Date.now()}.${ext}`,
-    });
+    try {
+      const uploadedImage = await imagekit.upload({
+        file: files[i].buffer,
+        fileName: `Car image-${filename}-${Date.now()}.${ext}`,
+      });
 
-    uploadedImages.push(uploadedImage.url);
+      uploadedImages.push(uploadedImage.url);
+    } catch (uploadError) {
+      console.error(
+        `Error uploading file ${files[i].originalname}:`,
+        uploadError.message
+      );
+      // Memutuskan untuk menghentikan eksekusi atau melanjutkan dengan file lainnya
+      return res.status(500).json({
+        status: "500",
+        message: `Failed to upload file ${files[i].originalname}`,
+        isSuccess: false,
+        error: uploadError.message,
+      });
+    }
   }
 
   const newCar = req.body;
 
   try {
     // Data mobil baru dengan gambar yang telah diupload
-    await Car.create({ ...newCar, images: uploadedImages });
+    const createdCar = await Car.create({ ...newCar, images: uploadedImages });
     res.status(200).json({
       status: "Success",
-      message: "Ping successfully",
+      message: "Car created successfully",
       isSuccess: true,
-      data: { ...newCar, images: uploadedImages },
+      data: { ...createdCar.toJSON(), images: uploadedImages },
     });
   } catch (error) {
     res.status(500).json({
       status: "500",
-      message: "Failed to get cars data",
+      message: "Failed to create car",
       isSuccess: false,
       error: error.message,
     });
   }
 }
+
 module.exports = {
   createCar,
   getAllCars,
